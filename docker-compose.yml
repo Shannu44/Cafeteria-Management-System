@@ -1,0 +1,54 @@
+
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: cafeteria-db
+    environment:
+      POSTGRES_DB: exam_2400030139
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - cafeteria_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d exam_2400030139"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cafeteria-net
+
+  backend:
+    image: shannu444/docker-backend-2400030139:latest
+    container_name: cafeteria-backend
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/exam_2400030139
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SERVER_PORT: 8081
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - cafeteria-net
+
+  frontend:
+    image: shannu444/docker-frontend-2400030139:latest
+    container_name: cafeteria-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - cafeteria-net
+
+volumes:
+  cafeteria_data:
+
+networks:
+  cafeteria-net:
